@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<head>
+  <meta charset="UTF-8">
+  <!--<link rel="stylesheet" type="text/css" href="blackjack_game.css">-->
+  <title>Blackjack</title>
+  <script>
+  </script>
+  <style type="text/css">
+    h1{
+    font-family: 'My Boli', sans-serif;
+    color: white;
+    }
+    body{
+    background-color: green;
+    text-align: center;
+    color: white;
+    }
+    .btn-gradient-radius-hit {
+    display: inline-block;
+    padding: 7px 20px;
+    border-radius: 25px;
+    text-decoration: none;
+    color: #FFF;
+    background-image: linear-gradient(45deg, #00FF00 0%, #00FF00 100%);
+    transition: .4s;
+    }
+    .btn-gradient-radius:hover-hit {
+    background-image: linear-gradient(45deg, #00FF00 0%, #00FF00 100%);
+    }
+    .btn-gradient-radius-stand {
+    display: inline-block;
+    padding: 7px 20px;
+    border-radius: 25px;
+    text-decoration: none;
+    color: #FFF;
+    background-image: linear-gradient(45deg, #FF0000 0%, #FF0000 100%);
+    transition: .4s;
+    }
+    .btn-gradient-radius:hover-stand {
+    background-image: linear-gradient(45deg, #FF0000 0%, #FF0000 100%);
+    }
+    
+    .btn-gradient-radius-home {
+    display: inline-block;
+    padding: 7px 20px;
+    border-radius: 25px;
+    text-decoration: none;
+    color: #000;
+    background-image: linear-gradient(45deg, yellow 0%, yellow 100%);
+    transition: .4s;
+    }
+    .btn-gradient-radius:hover-home {
+    background-image: linear-gradient(45deg, yellow 0%, yellow 100%);
+    }
+    .title{
+    text-decoration: none;
+    color: white;
+    }
+    /*.margin{
+    margin-right: 100px;
+    white-space: nowrap;
+    }*/
+  </style>
+  
+</head>
+<body>
+  <h1><a href="/blackjack/home" class="title">Blackjack</a></h1>
+  <% unless @flag %>
+  <p>プレイヤー<%= @count %>の手番です</p>
+  <% end %>
+  <input type="button" class="btn-gradient-radius-stand" <% if @count == @pnumber.size %> onClick="location.href='/blackjack/game_stands'"
+	 <% else %>
+	 onClick="location.href='/blackjack/games_stay'"
+	 <% end %>
+	 value="スタンド" <% if @result %> disabled="disabled" <% end %>>
+  <input type="button" class="btn-gradient-radius-hit" onClick="location.href='/blackjack_game_hit<%= @count %>'" value="ヒット" <% if @presults[@count.to_i-1] %> disabled="disabled" <% end %>>
+  <p id="hands">ディーラーの手札</p>
+  <p>
+    <% @dhands.each do |number| %>
+    <img src="/<%= number %>.png" width="100px">
+    <% end %>
+    <%= @dsum%>
+  </p>
+  <p>
+    <% @pclass.each_with_index do |p,n| %>
+    <span class="margin">
+      <div style="border: solid 0px; display: inline-block; width: 250px; position: relative; height: 200px; text-align: left;">
+	プレイヤー<%= n+1%>の手札
+	<% p.hands.each_with_index do |number,i| %>
+	<img src="/<%= number %>.png" width="100px" style="position: absolute; left: <%= 20*i %>px; top: 20px;">
+	<% end %>
+	<div style="display: inline-block; position: absolute; left: <%= 29*p.hands.size+60%>px; top: 130px">
+	  <% if p.total < 22 %>
+	     <%= p.total %>
+	     <% else %>
+	     bust
+	     <% end %>
+	</div>
+	<p style="position: absolute; top: 150px">
+	  <%= @presults[n] %>
+	</p>
+      </div>
+    </span>
+    <% end %>
+  </p>
+  <br>
+  <a href="/blackjack/home" class="btn-gradient-radius-home">ホームに戻る</a>
+  <!--<a href="/blackjack_game" class="btn-gradient-radius-home">もう一度プレイする</a>-->
+</body>
+</html>

@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<head>
+  <meta charset="UTF-8">
+  <!--<link rel="stylesheet" type="text/css" href="blackjack_game.css">-->
+  <title>Blackjack</title>
+  <style type="text/css">
+    h1{
+    font-family: 'My Boli', sans-serif;
+    color: white;
+    }
+    body{
+    background-color: green;
+    text-align: center;
+    color: white;
+    }
+    .btn-gradient-radius-reset {
+    display: inline-block;
+    padding: 7px 20px;
+    border-radius: 25px;
+    text-decoration: none;
+    color: #000;
+    background-image: linear-gradient(45deg, yellow 0%, yellow 100%);
+    transition: .4s;
+    }
+    .btn-gradient-radius:hover-reset {
+    background-image: linear-gradient(45deg, yellow 0%, yellow 100%);
+    }
+    .title{
+    text-decoration: none;
+    color: white;
+    }
+    .btn-real {
+    display: inline-block;
+    text-decoration: none;
+    color: rgba(0, 0, 0, 1);/*アイコン色*/
+    width: 80px;
+    height: 80px;
+    line-height: 85px;
+    font-size: 40px;
+    border-radius: 50%;
+    text-align: center;
+    overflow: hidden;
+    font-weight: bold;
+    background-image: linear-gradient(#ffd700 0%, #ffd700 100%);
+    text-shadow: 1px 1px 1px rgba(255, 255, 255, 0.66);
+    box-shadow: inset 0 2px 0 rgba(255,255,255,0.5), 0 2px 2px rgba(0, 0, 0, 0.19);
+    border-bottom: solid 2px #b5b5b5;
+    margin-right: 30px;
+    }
+    .btn-real i {
+    line-height: 80px;
+    }
+    .btn-real:active {
+    /*押したとき*/
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.5), 0 2px 2px rgba(0, 0, 0, 0.19);
+    border-bottom: none;
+    }
+    </style>
+</head>
+<body>
+  <h1><a href="/blackjack/home" class="title">Blackjack</a></h1>
+  <h2>かけ金を選んでください</h2>
+  <h2>残額は<%= @bet%>ドルです</h2>
+  <br>
+    <p>
+      <input type="button" class="btn-real" onClick="location.href='/blackjack/game_bet/5'" value="5" <% if @bet.to_i < 5 %> disabled="disabled" <% end %>>
+      <input type="button" class="btn-real" onClick="location.href='/blackjack/game_bet/10'" value="10" <% if @bet.to_i < 10 %> disabled="disabled" <% end %>>
+      <input type="button" class="btn-real" onClick="location.href='/blackjack/game_bet/25'" value="25" <% if @bet.to_i < 25 %> disabled="disabled" <% end %>>
+    <!--<a href="/blackjack_game_bet/5" class="btn-real">
+      <i class="fa fa-power-off">5</i>
+    </a>
+    <a href="/blackjack_game_bet/10" class="btn-real">
+      <i class="fa fa-power-off">10</i>
+    </a>
+    <a href="/blackjack_game_bet/25" class="btn-real">
+      <i class="fa fa-power-off">25</i>
+    </a>-->
+    <input type="button" class="btn-gradient-radius-reset" onClick="location.href='/blackjack/game_reset'" value="残額をリセットする">
+  </p>
+</body>
+<html>
