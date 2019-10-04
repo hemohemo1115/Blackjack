@@ -1,4 +1,6 @@
+=begin
 class Deck
+  attr_accessor :deck
   def initialize(deck)
     if deck
       @deck = deck
@@ -8,7 +10,7 @@ class Deck
     end
   end
 
-  attr_accessor :deck
+  
   
   def distribution
     @deck.pop
@@ -42,6 +44,7 @@ class Card
 end
 
 class Player
+  attr_accessor :hands, :sum, :bet, :betting
   def initialize
     @hands = []
     @sum = 0
@@ -49,7 +52,9 @@ class Player
     @betting = 0
   end
 
-  attr_accessor :hands, :sum, :bet, :betting
+  def hands
+    @hands
+  end
   
   def draw(deck,hands)
     if hands
@@ -128,8 +133,12 @@ class Dealer < Player
   end
   
 end
+=end
+
+require './app/lib/blackjack'
 
 class BlackjackController < ApplicationController
+  #include Blackjack
   def home
     session[:deck] = nil
     session[:phands] = nil
@@ -391,6 +400,8 @@ class BlackjackController < ApplicationController
     session[:pclass] = pclass
     session[:presults] = @presults
     session[:count] = @count
+    puts pclass
+    puts session[:pclass]
     render 'games.html.erb'
   end
 
@@ -408,6 +419,9 @@ class BlackjackController < ApplicationController
     @pclass = session[:pclass]
     @presults = session[:presults]
     @count = session[:count]
+    puts session[:pclass]
+    puts @pclass
+    puts "hoge"
     if p.nobust
       @psum
     else
