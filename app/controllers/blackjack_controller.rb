@@ -136,22 +136,43 @@ end
 =end
 
 require './app/lib/blackjack'
+require 'json'
+$file = './app/json/deck.json'
+$gamefile = './app/json/game.json'
 
 class BlackjackController < ApplicationController
   #include Blackjack
   def home
+=begin 
     session[:deck] = nil
     session[:phands] = nil
-    session[:dhands] = nil
+    session[:dhands] = nil 
+=end    
+    File.open($file, 'w') do |file|
+      data = {"deck"=>[]}
+      JSON.dump(data, file)
+    end
+    File.open($gamefile, 'w') do |game|
+      data = {"player"=>{"hands"=>[],"sum"=>nil,"bet"=>100,"betting"=>0}}
+      JSON.dump(data,game)
+    end
     render 'home.html.erb'
   end
 
   def select_bet
+=begin 
     p = Player.new
     if session[:bet]
       @bet = session[:bet]
     else
       @bet = p.bet
+    end
+=end
+    File.open("$gamefile") do |file|
+      data = JSON.load(file)
+    end
+    if data["player"]["bet"]
+      
     end
     render 'select_bet.html.erb'
   end
