@@ -1,18 +1,20 @@
 class Deck
     attr_accessor :deck
     def initialize(deck)
-    if deck
-        @deck = deck
-    else
-        @deck = [*1..52]
-        @deck.shuffle! #山札のシャッフル
-    end
+        if deck
+            @deck = deck
+            #puts "true"
+        else
+            @deck = [*1..52]
+            @deck.shuffle! #山札のシャッフル
+            #puts "false"
+        end
     end
 
 
 
     def distribution
-    @deck.pop
+        @deck.pop
     end
 
 end

@@ -72,21 +72,22 @@
   <p id="hands">ディーラーの手札</p>
   <p>
     <% @dhands.each do |number| %>
-    <img src="/<%= number%>.png" width="100px">
+    <%= image_tag "#{number}.png" , :width=>"100"%>
     <% end %>
     <%= @dsum%>
   </p>
   <p>
-    <% @pclass.each_with_index do |pl,n| %>
+    <% @gamesdata.each_with_index do |(pl, v), n| %>
+    <% if n < @pnumber.size %>
     <span class="margin">
       <div style="border: solid 0px; display: inline-block; width: 250px; position: relative; height: 200px; text-align: left;">
 	プレイヤー<%= n+1%>の手札
-	<% pl.hands.each_with_index do |number,i| %>
-	<img src="/<%= number%>.png" width="100px" style="position: absolute; left: <%= 20*i %>px; top: 20px;">
-	<% end %>
-	<div style="display: inline-block; position: absolute; left: <%= 29*pl.hands.size+60 %>px; top: 130px">
-	  <% if pl.total < 22 %>
-	     <%= pl.total %>
+	<% v["hands"].each_with_index do |number,i| %>
+	<%= image_tag "#{number}.png" , :width=>"100", :style=>"position: absolute; left:  #{20*i}px; top: 20px;"%>
+  <% end %>
+	<div style="display: inline-block; position: absolute; left: <%= 29*v["hands"].size+60 %>px; top: 130px">
+	  <% if v["sum"] < 22 %>
+	     <%= v["sum"] %>
 	     <% else %>
 	     bust
 	     <% end %>
@@ -96,6 +97,7 @@
 	</p>
       </div>
     </span>
+    <% end %>
     <% end %>
   </p>
   <br>

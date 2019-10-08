@@ -137,8 +137,9 @@ end
 
 require './app/lib/blackjack'
 require 'json'
-$file = './app/json/deck.json'
+$deckfile = './app/json/deck.json'
 $gamefile = './app/json/game.json'
+$gamesfile = './app/json/games.json'
 
 class BlackjackController < ApplicationController
   #include Blackjack
@@ -148,18 +149,23 @@ class BlackjackController < ApplicationController
     session[:phands] = nil
     session[:dhands] = nil 
 =end    
-    File.open($file, 'w') do |file|
+    File.open($deckfile, 'w') do |file|
       data = {"deck"=>[]}
       JSON.dump(data, file)
     end
     File.open($gamefile, 'w') do |game|
-      data = {"player"=>{"hands"=>[],"sum"=>nil,"bet"=>100,"betting"=>0}}
+      data = {"player"=>{"hands"=>[],"sum"=>nil,"bet"=>100,"betting"=>0}, "dealer"=>{"hands"=>[],"sum"=>nil}}
       JSON.dump(data,game)
+    end
+    File.open($gamesfile, 'w') do |file|
+      data = {"player1":{"hands": [],"sum": nil}, "player2":{"hands": [],"sum": nil},"player3":{"hands": [],"sum": nil},"player4":{"hands": [],"sum": nil}, "dealer":{"hands": [],"sum": nil}}
+      file.write JSON.pretty_generate(data)
     end
     render 'home.html.erb'
   end
 
   def select_bet
+    p = Player.new
 =begin 
     p = Player.new
     if session[:bet]
@@ -167,69 +173,107 @@ class BlackjackController < ApplicationController
     else
       @bet = p.bet
     end
-=end
-    File.open("$gamefile") do |file|
+=end 
+    data = nil
+    File.open($gamefile) do |file|
       data = JSON.load(file)
     end
     if data["player"]["bet"]
-      
+      @bet = data["player"]["bet"]
+    else
+      @bet = p.bet
     end
     render 'select_bet.html.erb'
   end
 
   def game_bet
-    session[:deck] = nil
-    session[:phands] = nil
-    session[:dhands] = nil
-    deck = Deck.new(session[:deck])
+    deckdata = nil
+    gamedata = nil
+    File.open($deckfile) do |file|
+      deckdata = JSON.load(file)
+    end
+    File.open($gamefile) do |file|
+      gamedata = JSON.load(file)
+    end
+    gamedata["player"]["hands"] = []
+    gamedata["dealer"]["hands"] = []
+    deck = Deck.new(false)
     p = Player.new
     d = Dealer.new
-    p.draw(deck,session[:phands])
-    d.draw(deck,session[:dhands])
-    p.draw(deck,session[:phands])
+    p.draw(deck,gamedata["player"]["hands"])
+    d.draw(deck,gamedata["dealer"]["hands"])
+    p.draw(deck,gamedata["player"]["hands"])
     @betting = params[:bet].to_i
     p.betting = params[:bet].to_i
     @phands = p.hands
     @dhands = d.hands
     @psum = p.total
     @dsum = d.total
-    @bet = session[:bet]
+    @bet = gamedata["player"]["bet"]
     if p.blackjack
       @bet = p.win
       @result = "you win　　あなたの残額は#{@bet}ドルです"
     end
-    session[:deck] = deck.deck
-    session[:phands] = p.hands
-    session[:dhands] = d.hands
-    session[:betting] = @betting
-    session[:bet] = @bet
+    File.open($deckfile, 'w') do |file|
+      deckdata["deck"] = deck.deck
+      JSON.dump(deckdata, file)
+    end
+    File.open($gamefile, 'w') do |file|
+      gamedata["player"]["hands"] = p.hands
+      gamedata["player"]["sum"] = p.total
+      gamedata["player"]["betting"] = @betting
+      gamedata["player"]["bet"] = @bet
+      gamedata["dealer"]["sum"] = d.total
+      JSON.dump(gamedata, file)
+    end
     render 'game.html.erb'
   end
 
   def game_reset
     p = Player.new
-    session[:deck] = nil
-    session[:phands] = nil
-    session[:dhands] = nil
-    session[:bet] = p.bet
-    @bet = session[:bet]
+    gamedata = nil
+    File.open($deckfile, 'w') do |file|
+      deckdata = {"deck"=>[]}
+      JSON.dump(deckdata, file)
+    end
+    File.open($gamefile) do |file|
+      gamedata = JSON.load(file)
+    end
+    File.open($gamefile, 'w') do |file|
+      gamedata["player"]["hands"] = []
+      gamedata["player"]["sum"] = nil
+      gamedata["player"]["betting"] = 0
+      gamedata["player"]["bet"] = 100
+      gamedata["dealer"]["hands"] = []
+      gamedata["dealer"]["sum"] = nil
+      JSON.dump(gamedata, file)
+    end
+    @bet = p.bet
     render 'select_bet.html.erb'
   end
 
   def game_hit
-    deck = Deck.new(session[:deck])
+    deckdata = nil
+    gamedata = nil
+    File.open($deckfile) do |file|
+      deckdata = JSON.load(file)
+    end
+    File.open($gamefile) do |file|
+      gamedata = JSON.load(file)
+    end
+    deck = Deck.new(deckdata["deck"])
     p = Player.new
     d = Dealer.new
-    p.draw(deck,session[:phands])
-    d.hands = session[:dhands]
+    p.draw(deck,gamedata["player"]["hands"])
+    d.hands = gamedata["dealer"]["hands"]
     @phands = p.hands
     @dhands = d.hands
     @psum = p.total
     @dsum = d.total
-    @betting = session[:betting]
-    p.betting = session[:betting]
-    @bet = session[:bet]
-    p.bet = session[:bet]
+    @betting = gamedata["player"]["betting"]
+    @bet = gamedata["player"]["bet"]
+    p.betting = gamedata["player"]["betting"]
+    p.bet = gamedata["player"]["bet"]
     if p.nobust
       @psum
     else
@@ -237,29 +281,44 @@ class BlackjackController < ApplicationController
       @bet = p.lose
       @result = "Player lose　　あなたの残額は#{@bet}ドルです"
     end
-    session[:deck] = deck.deck
-    session[:phands] = p.hands
-    session[:dhands] = d.hands
-    session[:bet] = @bet
+    File.open($deckfile, 'w') do |file|
+      deckdata["deck"] = deck.deck
+      JSON.dump(deckdata, file)
+    end
+    File.open($gamefile, 'w') do |file|
+      gamedata["player"]["hands"] = p.hands
+      gamedata["player"]["sum"] = p.total
+      gamedata["player"]["betting"] = @betting
+      gamedata["player"]["bet"] = @bet
+      JSON.dump(gamedata, file)
+    end
     render 'game.html.erb'
   end
 
   def game_double
-    deck = Deck.new(session[:deck])
+    deckdata = nil
+    gamedata = nil
+    File.open($deckfile) do |file|
+      deckdata = JSON.load(file)
+    end
+    File.open($gamefile) do |file|
+      gamedata = JSON.load(file)
+    end
+    deck = Deck.new(deckdata["deck"])
     p = Player.new
     d = Dealer.new
-    @flag = true
-    p.draw(deck,session[:phands])
-    d.hands = session[:dhands]
+    p.draw(deck,gamedata["player"]["hands"])
+    d.hands = gamedata["dealer"]["hands"]
     @phands = p.hands
     @dhands = d.hands
     @psum = p.total
     @dsum = d.total
-    session[:betting] *= 2
-    @betting = session[:betting]
-    p.betting = session[:betting]
-    @bet = session[:bet]
-    p.bet = session[:bet]
+    gamedata["player"]["betting"] *= 2
+    @betting = gamedata["player"]["betting"]
+    @bet = gamedata["player"]["bet"]
+    p.betting = gamedata["player"]["betting"]
+    p.bet = gamedata["player"]["bet"]
+    @flag = true
     if p.nobust
       @psum
     else
@@ -267,26 +326,41 @@ class BlackjackController < ApplicationController
       @bet = p.lose
       @result = "Player lose　　あなたの残額は#{@bet}ドルです"
     end
-    session[:deck] = deck.deck
-    session[:phands] = p.hands
-    session[:dhands] = d.hands
-    session[:bet] = @bet
+    File.open($deckfile, 'w') do |file|
+      deckdata["deck"] = deck.deck
+      JSON.dump(deckdata, file)
+    end
+    File.open($gamefile, 'w') do |file|
+      gamedata["player"]["hands"] = p.hands
+      gamedata["player"]["sum"] = p.total
+      gamedata["player"]["betting"] = @betting
+      gamedata["player"]["bet"] = @bet
+      JSON.dump(gamedata, file)
+    end
     render 'game.html.erb'
   end
 
   def game_stand
-    deck = Deck.new(session[:deck])
+    deckdata = nil
+    gamedata = nil
+    File.open($deckfile) do |file|
+      deckdata = JSON.load(file)
+    end
+    File.open($gamefile) do |file|
+      gamedata = JSON.load(file)
+    end
+    deck = Deck.new(deckdata["deck"])
     p = Player.new
     d = Dealer.new
-    p.hands = session[:phands]
-    d.draw(deck,session[:dhands])
-    @phands = session[:phands]
+    p.hands = gamedata["player"]["hands"]
+    d.draw(deck,gamedata["dealer"]["hands"])
+    @phands = p.hands
     @psum = p.total
     @dhands = d.hands
     @dsum = d.total
-    p.betting = session[:betting]
-    p.bet = session[:bet]
-    @bet = session[:bet]
+    p.betting = gamedata["player"]["betting"]
+    p.bet = gamedata["player"]["bet"]
+    @bet = gamedata["player"]["bet"]
     while d.judge_d
       d.draw(deck,session[:dhands])
       @dhands = d.hands
@@ -308,62 +382,88 @@ class BlackjackController < ApplicationController
       @bet = p.win
       @result = "Player win　　あなたの残額は#{@bet}ドルです"
     end
-    
-    session[:deck] = deck.deck
-    session[:dhands] = d.hands
-    session[:bet] = @bet
+    File.open($deckfile, 'w') do |file|
+      deckdata["deck"] = deck.deck
+      JSON.dump(deckdata, file)
+    end
+    File.open($gamefile, 'w') do |file|
+      gamedata["player"]["bet"] = @bet
+      gamedata["dealer"]["hands"] = d.hands
+      gamedata["dealer"]["sum"] = d.total
+      JSON.dump(gamedata, file)
+    end
     render 'game.html.erb'
   end
 
   def game_stands
-    deck = Deck.new(session[:deck])
+    gamesdata = nil
+    deckdata = nil
+    File.open($deckfile) do |file|
+      deckdata = JSON.load(file)
+    end
+    File.open($gamesfile) do |file|
+      gamesdata = JSON.load(file)
+    end
+    deck = Deck.new(deckdata["deck"])
     p = Player.new
     d = Dealer.new
-    d.draw(deck,session[:dhands])
+    d.hands = gamesdata["dealer"]["hands"]
     @dhands = d.hands
     @dsum = d.total
     @pnumber = session[:pnumber]
-    @pclass = session[:pclass]
     @presults = session[:presults]
     @flag = 1
     while d.judge_d
-      d.draw(deck,session[:dhands])
+      d.draw(deck,gamesdata["dealer"]["hands"])
       @dhands = d.hands
       @dsum = d.total
     end
     if d.nobust
-      @pclass.each_with_index do |p,i|
-        @dsum
-        if p.total > @dsum && p.total < 22
-          @presults[i] = "Player#{i+1} win"
-        elsif p.total < @dsum
-          @presults[i] = "Player#{i+1} lose"
-        elsif p.total == @dsum
-          @presults[i] = "Player#{i+1} draw"
+      gamesdata.each_with_index do |(p, v), i|
+        if i < @pnumber.size
+          @dsum
+          if v["sum"] > @dsum && v["sum"] < 22
+            @presults[i] = "Player#{i+1} win"
+          elsif v["sum"] < @dsum
+            @presults[i] = "Player#{i+1} lose"
+          elsif v["sum"] == @dsum
+            @presults[i] = "Player#{i+1} draw"
+          end
         end
       end
     else
       @dsum = "bust"
-      @pclass.each_with_index do |p,i|
+      gamesdata.each_with_index do |(p, v), i|
         if @presults[i] == nil
           @presults[i] = "Player#{i+1} win"
         end
       end
     end
-    session[:deck] = deck.deck
+    @gamesdata = gamesdata
     session[:dhands] = d.hands
+    File.open($deckfile, 'w') do |file|
+      deckdata["deck"] = deck.deck
+      JSON.dump(deckdata, file)
+    end
+    File.open($gamesfile, 'w') do |file|
+      gamesdata["dealer"]["hands"] = d.hands
+      gamesdata["dealer"]["sum"] = d.total
+      file.write JSON.pretty_generate(gamesdata)
+    end
     render 'games_stay.html.erb'
   end
 
   def games
-    session[:deck] = nil
-    i = 0
-    params[:n].to_i.times do
-      session["p#{i}hands".to_sym] = nil
-      i += 1
+    gamesdata = nil
+    deckdata = nil
+    File.open($deckfile) do |file|
+      deckdata = JSON.load(file)
     end
-    session[:dhands] = nil
-    deck = Deck.new(session[:deck])  
+    File.open($gamesfile) do |file|
+      gamesdata = JSON.load(file)
+    end
+    deck = Deck.new(false)
+    d = Dealer.new
     i = 0
     pnumber = []
     pclass = []
@@ -378,16 +478,15 @@ class BlackjackController < ApplicationController
     @presults = []
     @plhands = []
     @count = 1
-    d = Dealer.new
-    i = 0
+    i = 1
     pclass.each do |p|
-      p.draw(deck,session["p#{i}hands".to_sym])
+      p.draw(deck,gamesdata["player#{i}"]["hands"])
       i += 1
     end
-    d.draw(deck,session[:dhands])
-    i = 0
+    d.draw(deck,gamesdata["dealer"]["hands"])
+    i = 1
     pclass.each do |p|
-      p.draw(deck,session["p#{i}hands".to_sym])
+      p.draw(deck,gamesdata["player#{i}"]["hands"])
       i += 1
     end
     i = 0
@@ -398,7 +497,7 @@ class BlackjackController < ApplicationController
     @dhands = d.hands
     i = 0
     params[:n].to_i.times do
-      @psums = pclass[i].total
+      @psums[i] = pclass[i].total
       i += 1
     end
     @dsum = d.total
@@ -409,29 +508,46 @@ class BlackjackController < ApplicationController
       end
       i += 1
     end
-    session[:deck] = deck.deck
+    File.open($deckfile, 'w') do |file|
+      deckdata["deck"] = deck.deck
+      JSON.dump(deckdata, file)
+    end
     i = 0
     params[:n].to_i.times do
-      session["p#{i}hands".to_sym] = pclass[i].hands
-      session["p#{i}result".to_sym] = @presults[i]
+      File.open($gamesfile, 'w') do |file|
+        gamesdata["player#{i+1}"]["hands"] = pclass[i].hands
+        gamesdata["player#{i+1}"]["sum"] = pclass[i].total
+        file.write JSON.pretty_generate(gamesdata)
+      end
       i += 1
     end
-    session[:dhands] = d.hands
+    File.open($gamesfile, 'w') do |file|
+      gamesdata["dealer"]["hands"] = d.hands
+      gamesdata["dealer"]["sum"] = d.total
+      file.write JSON.pretty_generate(gamesdata)
+    end
+    @gamesdata = gamesdata
     session[:pnumber] = pnumber
     session[:pclass] = pclass
     session[:presults] = @presults
     session[:count] = @count
-    puts pclass
-    puts session[:pclass]
     render 'games.html.erb'
   end
 
   def games_hit1
-    deck = Deck.new(session[:deck])
+    deckdata = nil
+    gamesdata = nil
+    File.open($deckfile) do |file|
+      deckdata = JSON.load(file)
+    end
+    File.open($gamesfile) do |file|
+      gamesdata = JSON.load(file)
+    end
+    deck = Deck.new(deckdata["deck"])
     p = Player.new
     d = Dealer.new
-    p.draw(deck,session[:p0hands])
-    d.hands = session[:dhands]
+    p.draw(deck,gamesdata["player1"]["hands"])
+    d.hands = gamesdata["dealer"]["hands"]
     @phands = p.hands
     @dhands = d.hands
     @psum = p.total
@@ -440,36 +556,45 @@ class BlackjackController < ApplicationController
     @pclass = session[:pclass]
     @presults = session[:presults]
     @count = session[:count]
-    puts session[:pclass]
-    puts @pclass
-    puts "hoge"
     if p.nobust
       @psum
     else
       @psum = "bust"
       @presults[0] = "Player1 lose"
     end
-    session[:deck] = deck.deck
-    session[:p0hands] = p.hands
-    session[:dhands] = d.hands
+    @gamesdata = gamesdata
     session[:presults] = @presults
-    @pclass[0]["hands"] = p.hands
-    session[:pclass] = @pclass
+    File.open($deckfile, 'w') do |file|
+      deckdata["deck"] = deck.deck
+      JSON.dump(deckdata, file)
+    end
+    File.open($gamesfile, 'w') do |file|
+      gamesdata["player1"]["hands"] = p.hands
+      gamesdata["player1"]["sum"] = p.total
+      file.write JSON.pretty_generate(gamesdata)
+    end
     render 'games.html.erb'
   end
 
   def games_hit2
-    deck = Deck.new(session[:deck])
+    deckdata = nil
+    gamesdata = nil
+    File.open($deckfile) do |file|
+      deckdata = JSON.load(file)
+    end
+    File.open($gamesfile) do |file|
+      gamesdata = JSON.load(file)
+    end
+    deck = Deck.new(deckdata["deck"])
     p = Player.new
     d = Dealer.new
-    p.draw(deck,session[:p1hands])
-    d.hands = session[:dhands]
+    p.draw(deck,gamesdata["player2"]["hands"])
+    d.hands = gamesdata["dealer"]["hands"]
     @phands = p.hands
     @dhands = d.hands
     @psum = p.total
     @dsum = d.total
     @pnumber = session[:pnumber]
-    @pclass = session[:pclass]
     @presults = session[:presults]
     @count = session[:count]
     if p.nobust
@@ -478,28 +603,40 @@ class BlackjackController < ApplicationController
       @psum = "bust"
       @presults[1] = "Player2 lose"
     end
-    session[:deck] = deck.deck
-    session[:p1hands] = p.hands
-    session[:dhands] = d.hands
+    @gamesdata = gamesdata
     session[:presults] = @presults
-    @pclass[1].hands = p.hands
-    session[:pclass] = @pclass
+    File.open($deckfile, 'w') do |file|
+      deckdata["deck"] = deck.deck
+      JSON.dump(deckdata, file)
+    end
+    File.open($gamesfile, 'w') do |file|
+      gamesdata["player2"]["hands"] = p.hands
+      gamesdata["player2"]["sum"] = p.total
+      file.write JSON.pretty_generate(gamesdata)
+    end
     render 'games_stay.html.erb'
 
   end
 
   def games_hit3
-    deck = Deck.new(session[:deck])
+    deckdata = nil
+    gamesdata = nil
+    File.open($deckfile) do |file|
+      deckdata = JSON.load(file)
+    end
+    File.open($gamesfile) do |file|
+      gamesdata = JSON.load(file)
+    end
+    deck = Deck.new(deckdata["deck"])
     p = Player.new
     d = Dealer.new
-    p.draw(deck,session[:p2hands])
-    d.hands = session[:dhands]
+    p.draw(deck,gamesdata["player3"]["hands"])
+    d.hands = gamesdata["dealer"]["hands"]
     @phands = p.hands
     @dhands = d.hands
     @psum = p.total
     @dsum = d.total
     @pnumber = session[:pnumber]
-    @pclass = session[:pclass]
     @presults = session[:presults]
     @count = session[:count]
     if p.nobust
@@ -508,29 +645,39 @@ class BlackjackController < ApplicationController
       @psum = "bust"
       @presults[2] = "Player3 lose"
     end
-    session[:deck] = deck.deck
-    session[:p2hands] = p.hands
-    session[:dhands] = d.hands
+    @gamesdata = gamesdata
     session[:presults] = @presults
-    @pclass[2].hands = p.hands
-    session[:pclass] = @pclass
+    File.open($deckfile, 'w') do |file|
+      deckdata["deck"] = deck.deck
+      JSON.dump(deckdata, file)
+    end
+    File.open($gamesfile, 'w') do |file|
+      gamesdata["player3"]["hands"] = p.hands
+      gamesdata["player3"]["sum"] = p.total
+      file.write JSON.pretty_generate(gamesdata)
+    end
     render 'games_stay.html.erb'
   end
 
   def games_hit4
-    deck = Deck.new(session[:deck])
+    deckdata = nil
+    gamesdata = nil
+    File.open($deckfile) do |file|
+      deckdata = JSON.load(file)
+    end
+    File.open($gamesfile) do |file|
+      gamesdata = JSON.load(file)
+    end
+    deck = Deck.new(deckdata["deck"])
     p = Player.new
     d = Dealer.new
-    #@p2hands = session[:p2hands]
-    #@p3hands = session[:p3hands]
-    p.draw(deck,session[:p3hands])
-    d.hands = session[:dhands]
+    p.draw(deck,gamesdata["player4"]["hands"])
+    d.hands = gamesdata["dealer"]["hands"]
     @phands = p.hands
     @dhands = d.hands
     @psum = p.total
     @dsum = d.total
     @pnumber = session[:pnumber]
-    @pclass = session[:pclass]
     @presults = session[:presults]
     @count = session[:count]
     if p.nobust
@@ -539,29 +686,39 @@ class BlackjackController < ApplicationController
       @psum = "bust"
       @presults[3] = "Player4 lose"
     end
-    session[:deck] = deck.deck
-    session[:p3hands] = p.hands
-    session[:dhands] = d.hands
+    @gamesdata = gamesdata
     session[:presults] = @presults
-    @pclass[3].hands = p.hands
-    session[:pclass] = @pclass
+    File.open($deckfile, 'w') do |file|
+      deckdata["deck"] = deck.deck
+      JSON.dump(deckdata, file)
+    end
+    File.open($gamesfile, 'w') do |file|
+      gamesdata["player4"]["hands"] = p.hands
+      gamesdata["player4"]["sum"] = p.total
+      file.write JSON.pretty_generate(gamesdata)
+    end
     render 'games_stay.html.erb'
   end
 
   def games_stay
     session[:count] += 1
-    deck = Deck.new(session[:deck])
+    deckdata = nil
+    gamesdata = nil
+    File.open($deckfile) do |file|
+      deckdata = JSON.load(file)
+    end
+    File.open($gamesfile) do |file|
+      gamesdata = JSON.load(file)
+    end
+    deck = Deck.new(deckdata["deck"])
     d = Dealer.new
-    d.hands = session[:dhands]
+    d.hands = gamesdata["dealer"]["hands"]
     @dhands = d.hands
     @dsum = d.total
+    @gamesdata = gamesdata
     @pnumber = session[:pnumber]
-    @pclass = session[:pclass]
     @presults = session[:presults]
     @count = session[:count]
-    session[:deck] = deck.deck
-    session[:dhands] = d.hands
-    session[:presults] = @presults
     session[:count] = @count
     render 'games_stay.html.erb'
   end

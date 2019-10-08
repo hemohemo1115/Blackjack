@@ -67,14 +67,14 @@
   <p id="hands">ディーラーの手札</p>
   <p>
     <% @dhands.each do |number| %>
-    <img src="/<%= number%>.png" width="100px">
+    <%= image_tag "#{number}.png" , :width=>"100"%>
     <% end %>
     <%= @dsum%>
   </p>
   <p>プレイヤーの手札　　　<% unless @result %>あなたの現在のかけ金は<%= @betting%>ドルです<% end %></p>
   <p>
     <% @phands.each do |number| %>
-    <img src="/<%= number%>.png" width="100px">
+    <%= image_tag "#{number}.png" , :width=>"100"%>
     <% end %>
     <%= @psum%>
   </p>

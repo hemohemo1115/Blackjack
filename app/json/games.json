@@ -1,0 +1,32 @@
+{
+  "player1": {
+    "hands": [
+
+    ],
+    "sum": null
+  },
+  "player2": {
+    "hands": [
+
+    ],
+    "sum": null
+  },
+  "player3": {
+    "hands": [
+
+    ],
+    "sum": null
+  },
+  "player4": {
+    "hands": [
+
+    ],
+    "sum": null
+  },
+  "dealer": {
+    "hands": [
+
+    ],
+    "sum": null
+  }
+}
