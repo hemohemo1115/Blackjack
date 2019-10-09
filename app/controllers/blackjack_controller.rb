@@ -1,4 +1,4 @@
-=begin
+
 class Deck
   attr_accessor :deck
   def initialize(deck)
@@ -133,9 +133,8 @@ class Dealer < Player
   end
   
 end
-=end
 
-require './app/lib/blackjack'
+#require '../lib/blackjack'
 require 'json'
 $deckfile = './app/json/deck.json'
 $gamefile = './app/json/game.json'
