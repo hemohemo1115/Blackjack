@@ -1,3 +1,6 @@
+class Blackjack
+
+end
 class Deck
     attr_accessor :deck
     def initialize(deck)
