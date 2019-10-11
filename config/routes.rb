@@ -1,4 +1,5 @@
 Rails.application.routes.draw do
+  root 'blackjack#home'
   get 'blackjack/home'
   get 'blackjack/select_bet'
   get 'blackjack/game_bet'
